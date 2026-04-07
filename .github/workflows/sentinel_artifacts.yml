@@ -11,14 +11,15 @@ permissions:
 
 jobs:
   forge_artifacts:
-    name: 🔨 Build Universal Bastion (${{ matrix.os }})
+    name: 🔨 Build Universal Bastion (${{ matrix.os }} / ${{ matrix.target }})
+    # 🏹 On force Ubuntu 20.04 pour la compatibilité GLIBC (2.31)
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
+          - os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
             artifact_name: precop-node-linux
             asset_name: precop-node-linux
           - os: macos-latest
@@ -42,11 +43,11 @@ jobs:
           toolchain: 1.81.0
           targets: ${{ matrix.target }}
 
-      - name: 🛡️ Install Dependencies (Linux MUSL)
-        if: matrix.target == 'x86_64-unknown-linux-musl'
+      - name: 🛡️ Install Dependencies (Linux Focal)
+        if: matrix.os == 'ubuntu-20.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake clang llvm libssl-dev build-essential perl musl-tools
+          sudo apt-get install -y cmake clang llvm libssl-dev build-essential perl
 
       - name: 🛡️ Install Dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -63,7 +64,7 @@ jobs:
           echo "🔍 Checking Doc/RPC..."
           ls -la doc/rpc/ || echo "🚨 doc/rpc MISSING"
 
-      - name: 🔨 Forge Sovereign Engine (STATIC MUSL)
+      - name: 🔨 Forge Sovereign Engine (FOCAL COMPAT)
         shell: bash
         working-directory: ./engine
         env:
@@ -71,13 +72,12 @@ jobs:
           CXX: clang++
           RUST_BACKTRACE: 1
         run: |
-          # 🛡️ FORGE STATIQUE ET UNIVERSELLE
+          # 🛡️ FORGE COMPATIBLE GLIBC 2.31 (FOCAL)
           cargo build --verbose --release --target ${{ matrix.target }} -p florestad -j 2
           
       - name: 📦 Prepare Binary (Universal Pack)
         shell: bash
         run: |
-          # On standardise l'extension pour faciliter la détection
           EXT=""
           [[ "${{ matrix.os }}" == "windows-latest" ]] && EXT=".exe"
           

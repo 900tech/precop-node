@@ -49,9 +49,9 @@ fi
 
 # 🚀 5. PERMISSIONS
 # 🛡️ BINARY ALIGNMENT
-if [ -f "$BIN_DIR/precopscan-node" ]; then
+if [ -f "$BIN_DIR/precop-node" ]; then
     echo "🔄 Standardizing binary name..."
-    mv "$BIN_DIR/precopscan-node" "$BIN_DIR/precop-node"
+    mv "$BIN_DIR/precop-node" "$BIN_DIR/precop-node"
 fi
 
 if [ -f "$BIN_DIR/precop-node" ]; then
