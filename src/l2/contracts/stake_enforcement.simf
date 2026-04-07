@@ -1,0 +1,3 @@
+fn main() {
+    jet::check_lock_distance(1008);
+}

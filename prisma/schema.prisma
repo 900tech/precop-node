@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 🛡️ BITCOIN ROLLUP: SOVEREIGN L2 SCHEMA (v2570)
+
+model L2Block {
+  height    Int      @id
+  stateHash String   @unique
+  tweakedPubKey String @unique // 🏹 THE ASTROLABE SIGNATURE: Q = P + HG
+  timestamp DateTime @default(now())
+}
+
+model L2Transaction {
+  id           String   @id
+  blockHeight  Int
+  txIndex      Int
+  protocol     String?
+  payload      Json?
+  feeRecipient String?  // 🏛️ Sovereign Fee Vault: bc1p...
+  createdAt    DateTime @default(now())
+}

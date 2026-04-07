@@ -1,0 +1,168 @@
+/*
+ * TUSM (Template-Enforced UTXO State Machine)
+ * Contract: brc20_cdp.simf
+ * Purpose: CDP Settlement (Mint/Repay/Liquidate) with Sovereign Routing.
+ */
+
+fn main() {
+
+    // ── 0. PATH IDENTIFICATION ───────────────────────────────────────────────
+    let operation_type = witness::OPERATION_TYPE;
+
+    let is_mint      = jet::eq_8(operation_type, 3);
+    let is_repay     = jet::eq_8(operation_type, 4);
+    let is_liquidate = jet::eq_8(operation_type, 5);
+    let is_freeze    = jet::eq_8(operation_type, 7);
+
+    // ── 1. SHARED WITNESSES ─────────────────────────────────────────────────
+    let collateral_sats = witness::COLLATERAL_SATS;
+    let btc_price_cents = witness::BTC_PRICE_CENTS;
+    let debt_amt        = witness::DEBT_AMT;
+
+    // val_128 = collateral * price
+    let (val_hi, val_lo) = jet::multiply_64(collateral_sats, btc_price_cents);
+
+    // ── 2. MINT: COLLATERAL RATIO ────────────────────────────────────────────
+    // MINT: collateral * price >= debt * 150   (150% over-collateralisation)
+    let (mint_req_hi, mint_req_lo) = jet::multiply_64(debt_amt, 150);
+    // ge_128 logic inlined: hi_gt OR (hi_eq AND lo_ge)
+    let hi_gt_mint = jet::complement_1(jet::le_64(val_hi, mint_req_hi));
+    let hi_eq_mint = jet::eq_64(val_hi, mint_req_hi);
+    let lo_ge_mint = jet::le_64(mint_req_lo, val_lo);
+    let valid_ratio = jet::or_1(hi_gt_mint, jet::and_1(hi_eq_mint, lo_ge_mint));
+
+    let treasury_mint_fee = witness::TREASURY_MINT_FEE;
+    let (f_hi, f_lo) = jet::multiply_64(treasury_mint_fee, 200);
+    // ge_128 logic inlined: (f_hi, f_lo) >= (0, debt_amt)
+    let f_hi_gt_mint = jet::complement_1(jet::le_64(f_hi, 0));
+    let f_hi_eq_mint = jet::eq_64(f_hi, 0);
+    let f_lo_ge_mint = jet::le_64(debt_amt, f_lo);
+    let valid_mint_fee = jet::or_1(f_hi_gt_mint, jet::and_1(f_hi_eq_mint, f_lo_ge_mint));
+
+    let valid_mint_cond = jet::and_1(valid_ratio, valid_mint_fee);
+
+    // ── 3. LIQUIDATE: COLLATERAL RATIO ───────────────────────────────────────
+    // LIQUIDATE: collateral * price < debt * 120   (below 120% → insolvent)
+    let (liq_req_hi, liq_req_lo) = jet::multiply_64(debt_amt, 120);
+    // lt_128 logic inlined: NOT ge_128
+    let hi_gt_liq = jet::complement_1(jet::le_64(val_hi, liq_req_hi));
+    let hi_eq_liq = jet::eq_64(val_hi, liq_req_hi);
+    let lo_ge_liq = jet::le_64(liq_req_lo, val_lo);
+    let ge_liq_ratio = jet::or_1(hi_gt_liq, jet::and_1(hi_eq_liq, lo_ge_liq));
+    let is_insolvent = jet::complement_1(ge_liq_ratio);
+
+    let treasury_penalty   = witness::TREASURY_PENALTY;
+    let seized_collateral  = witness::SEIZED_COLLATERAL;
+    let (p_hi, p_lo)  = jet::multiply_64(treasury_penalty, 100);
+    let (sc_hi, sc_lo) = jet::multiply_64(seized_collateral, 9);
+    // ge_128 logic inlined: p_128 >= sc_128
+    let p_hi_gt_liq = jet::complement_1(jet::le_64(p_hi, sc_hi));
+    let p_hi_eq_liq = jet::eq_64(p_hi, sc_hi);
+    let p_lo_ge_liq = jet::le_64(sc_lo, p_lo);
+    let valid_penalty = jet::or_1(p_hi_gt_liq, jet::and_1(p_hi_eq_liq, p_lo_ge_liq));
+
+    let valid_liq_cond = jet::and_1(is_insolvent, valid_penalty);
+
+    // ── 4. STABILITY FEE ─────────────────────────────────────────────────────
+    let stability_fee_paid = witness::STABILITY_FEE_PAID;
+    let current_height     = witness::CURRENT_HEIGHT;
+    let last_update_height = witness::LAST_UPDATE_HEIGHT;
+    let blocks_elapsed = jet::subtract_64(current_height, last_update_height);
+
+    let (sf_hi, sf_lo) = jet::multiply_64(stability_fee_paid, 52560000);
+    let (debt_rate_hi, debt_rate_lo) = jet::multiply_64(debt_amt, 25);
+    let (growth_carry_lo, growth_lo) = jet::multiply_64(debt_rate_lo, blocks_elapsed);
+    let (_, growth_carry_hi) = jet::multiply_64(debt_rate_hi, blocks_elapsed);
+    let (sf_ovf, final_growth_hi) = jet::add_64(growth_carry_lo, growth_carry_hi);
+    jet::verify(jet::complement_1(sf_ovf));
+
+    // ge_128 logic inlined: sf_128 >= growth_128
+    let sf_hi_gt = jet::complement_1(jet::le_64(sf_hi, final_growth_hi));
+    let sf_hi_eq = jet::eq_64(sf_hi, final_growth_hi);
+    let sf_lo_ge = jet::le_64(growth_lo, sf_lo);
+    let valid_stability = jet::or_1(sf_hi_gt, jet::and_1(sf_hi_eq, sf_lo_ge));
+
+    // ── 5. ORACLE PRICE VERIFICATION ─────────────────────────────────────────
+    let oracle_pubkey = witness::ORACLE_PUBKEY;
+    let oracle_sig    = witness::ORACLE_SIG;
+    let price_msg = jet::sha256_ctx_8_finalize(
+        jet::sha256_ctx_8_add_8(
+            jet::sha256_ctx_8_add_8(
+                jet::sha256_ctx_8_init(),
+                btc_price_cents
+            ),
+            current_height
+        )
+    );
+    let price_valid = jet::bip340_verify((oracle_pubkey, price_msg, oracle_sig));
+    jet::verify(price_valid);
+
+    // ── 6. TREASURY BINDING ─────────────────────────────────────────────────
+    let committed_tr_hash = witness::TREASURY_SPK_HASH;
+    let actual_tr_hash    = get_output_script_pubkey_hash(2);
+    let tr_addr_ok = jet::eq_256(committed_tr_hash, actual_tr_hash);
+
+    let tr_amount_ok = jet::or_1(
+        jet::or_1(
+            jet::and_1(is_mint,      jet::le_64(treasury_mint_fee, get_output_value(2))),
+            jet::and_1(is_liquidate, jet::le_64(treasury_penalty,  get_output_value(2)))
+        ),
+        jet::and_1(is_repay, jet::le_64(stability_fee_paid, get_output_value(2)))
+    );
+    jet::verify(jet::and_1(tr_addr_ok, tr_amount_ok));
+
+    // ── 7. BRC-20 ATOMICITY ─────────────────────────────────────────────────
+    let expected_json_hash = witness::EXPECTED_OP_RETURN_HASH;
+    let actual_json_hash   = get_output_script_pubkey_hash(3);
+    let json_ok = jet::eq_256(expected_json_hash, actual_json_hash);
+    jet::verify(json_ok);
+
+    // ── 8. SOVEREIGN ROUTING ────────────────────────────────────────────────
+    let committed_borrower_hash = witness::BORROWER_SPK_HASH;
+    let liquidator_pubkey       = witness::LIQUIDATOR_PUBKEY;
+    let liquidator_spk_hash     = jet::sha256_ctx_8_finalize(
+        jet::sha256_ctx_8_add_256(
+            jet::sha256_ctx_8_init(),
+            liquidator_pubkey
+        )
+    );
+    let actual_output0_hash = get_output_script_pubkey_hash(0);
+    let repay_recipient_ok = jet::eq_256(committed_borrower_hash, actual_output0_hash);
+    let liq_recipient_ok   = jet::eq_256(liquidator_spk_hash, actual_output0_hash);
+
+    let required_recipient_sats = witness::REQUIRED_RECIPIENT_SATS;
+    let recipient_amount_ok     = jet::le_64(required_recipient_sats, get_output_value(0));
+
+    let routing_ok = jet::and_1(
+        jet::or_1(
+            jet::complement_1(jet::or_1(is_repay, is_liquidate)),
+            jet::or_1(
+                jet::and_1(is_repay,     repay_recipient_ok),
+                jet::and_1(is_liquidate, liq_recipient_ok)
+            )
+        ),
+        jet::or_1(
+            jet::complement_1(jet::or_1(is_repay, is_liquidate)),
+            recipient_amount_ok
+        )
+    );
+
+    // ── 9. GOVERNANCE ───────────────────────────────────────────────────────
+    let council_pubkey =
+        0x5555555555555555555555555555555555555555555555555555555555555555;
+    let council_sig = witness::COUNCIL_SIG;
+    let council_msg = jet::tx_hash();
+    let council_ok = jet::bip340_verify((council_pubkey, council_msg, council_sig));
+
+    // ── 10. FINAL ENFORCEMENT ───────────────────────────────────────────────
+    let mint_enforce   = jet::or_1(jet::complement_1(is_mint),      valid_mint_cond);
+    let repay_enforce  = jet::or_1(jet::complement_1(is_repay),      jet::and_1(valid_stability, routing_ok));
+    let liq_enforce    = jet::or_1(jet::complement_1(is_liquidate),  jet::and_1(jet::and_1(valid_liq_cond, valid_stability), routing_ok));
+    let freeze_enforce = jet::or_1(jet::complement_1(is_freeze),     council_ok);
+
+    let final_check = jet::and_1(
+        jet::and_1(mint_enforce, repay_enforce),
+        jet::and_1(liq_enforce,  freeze_enforce)
+    );
+    jet::verify(final_check);
+}

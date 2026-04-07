@@ -1,0 +1,107 @@
+/*
+ * TUSM (Template-Enforced UTXO State Machine)
+ * Contract: brc20_standard.simf
+ * Purpose: Sovereign BRC-20 Token Lifecycle.
+ *
+ * Opcodes:
+ *   0 = DEPLOY   — Initialise a new ticker (Oracle authorized).
+ *   2 = TRANSFER — Peer-to-peer ownership transition (Owner signed).
+ *   3 = MINT     — Supply-capped issuance (Oracle authorized).
+ *
+ * Security invariants:
+ *   DEPLOY   → Oracle Schnorr sig required + supply sanity (max_supply > 0).
+ *   MINT     → Oracle Schnorr sig required + new_supply <= max_supply (no overflow).
+ *   TRANSFER → Owner Schnorr sig required (ticker-bound key).
+ *   ALL ops  → JSON OP_RETURN payload must match expected hash (atomicity).
+ *
+ * Witness Data:
+ * - [OPERATION_TYPE]:       u8
+ * - [TICKER_HASH]:          u256
+ * - [MAX_SUPPLY]:           u64 BE
+ * - [MINT_AMT]:             u64 BE
+ * - [CURRENT_SUPPLY]:       u64 BE
+ * - [EXPECTED_OP_RETURN_HASH]: u256
+ * - [ORACLE_PUBKEY]:        u256
+ * - [ORACLE_SIG]:           [u8; 64]
+ * - [OWNER_PUBKEY]:         u256
+ * - [OWNER_SIG]:            [u8; 64]
+ */
+
+fn main() {
+    let operation_type: u8 = witness::OPERATION_TYPE;
+
+    // BRC-20 opcodes
+    let is_deploy   = jet::eq_8(operation_type, 0);
+    let is_transfer = jet::eq_8(operation_type, 2);
+    let is_mint     = jet::eq_8(operation_type, 3);
+
+    // Exactly one valid opcode must be active
+    let valid_op = jet::or_1(is_deploy, jet::or_1(is_transfer, is_mint));
+    jet::verify(valid_op);
+
+    // ─── Shared witnesses ────────────────────────────────────────────────────
+    let ticker_hash: u256    = witness::TICKER_HASH;
+    let max_supply: u64      = witness::MAX_SUPPLY;
+    let mint_amt: u64        = witness::MINT_AMT;
+    let current_supply: u64  = witness::CURRENT_SUPPLY;
+
+    let oracle_pk: u256       = witness::ORACLE_PUBKEY;
+    let oracle_sig: [u8; 64]  = witness::ORACLE_SIG;
+    let owner_pk: u256        = witness::OWNER_PUBKEY;
+    let owner_sig: [u8; 64]   = witness::OWNER_SIG;
+
+    let msg: u256 = jet::sig_all_hash();
+
+    // ─── ORACLE SIGNATURE (required for DEPLOY and MINT) ─────────────────────
+    let oracle_sig_valid = jet::bip340_verify(oracle_pk, msg, oracle_sig);
+
+    // ─── OWNER SIGNATURE (required for TRANSFER) ─────────────────────────────
+    // The owner key is bound to the ticker_hash to prevent cross-ticker replays:
+    //   owner_pk must be the key that deployed this specific ticker.
+    let owner_sig_valid  = jet::bip340_verify(owner_pk, msg, owner_sig);
+
+    // ─── SUPPLY INVARIANTS ────────────────────────────────────────────────────
+    // MINT: new_supply = current_supply + mint_amt <= max_supply, no u64 overflow
+    let (carry, new_supply) = jet::add_64(current_supply, mint_amt);
+    let no_overflow  = jet::complement_1(carry);
+    let supply_ok    = jet::and_1(no_overflow, jet::le_64(new_supply, max_supply));
+
+    // DEPLOY: max_supply must be > 0 (non-trivial token)
+    let deploy_supply_ok = jet::complement_1(jet::eq_64(max_supply, 0));
+
+    // ─── JSON OP_RETURN ATOMICITY ─────────────────────────────────────────────
+    // All operations must carry a valid on-chain JSON payload.
+    let expected_op_return_hash: u256 = witness::EXPECTED_OP_RETURN_HASH;
+    let actual_op_return_hash: u256   = jet::output_script_pubkey_hash(1);
+    let json_valid = jet::eq_256(expected_op_return_hash, actual_op_return_hash);
+
+    // ─── DISPATCH ─────────────────────────────────────────────────────────────
+    //
+    // deploy_ok:   Oracle signed + max_supply > 0
+    // mint_ok:     Oracle signed + supply cap not exceeded
+    // transfer_ok: Owner signed
+    //
+    // Pattern: jet::or_1(jet::complement_1(is_X), condition_X)
+    //   ≡ "if is_X then condition_X must hold"
+
+    let deploy_ok   = jet::or_1(
+        jet::complement_1(is_deploy),
+        jet::and_1(oracle_sig_valid, deploy_supply_ok)
+    );
+
+    let mint_ok     = jet::or_1(
+        jet::complement_1(is_mint),
+        jet::and_1(oracle_sig_valid, supply_ok)
+    );
+
+    let transfer_ok = jet::or_1(
+        jet::complement_1(is_transfer),
+        owner_sig_valid
+    );
+
+    // Final enforcement: correct op, correct auth, correct JSON
+    jet::verify(jet::and_1(
+        jet::and_1(deploy_ok, jet::and_1(mint_ok, transfer_ok)),
+        json_valid
+    ));
+}

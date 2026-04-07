@@ -1,0 +1,24 @@
+# 👑 PRECOP SENTINEL - TEMPLATE RC (v6800)
+# This is a reference template. Do not edit directly.
+# Run ./scripts/setup_bastion.sh to generate your local floresta.toml.
+
+[network]
+user_agent = "/Precop:1.0.0/"
+
+[p2p]
+address = "127.0.0.1"
+port = 8333
+
+[rpc]
+address = "127.0.0.1"
+port = 8332
+user = "floresta"
+password = "8e5cde5295800d10b02b297085832da9" # 🔐 Automatically replaced by setup_bastion.sh
+
+[electrum]
+enabled = true
+address = "127.0.0.1"
+port = 50001
+
+[wallet]
+# Mandatory section for internal parsing

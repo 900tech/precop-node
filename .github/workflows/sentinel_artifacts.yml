@@ -1,0 +1,48 @@
+name: 🛡️ PRECOP Sentinel Artifacts Forge
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  forge_artifacts:
+    name: 🔨 Build Universal Bastion (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: precop-node-linux
+            asset_name: precop-node-linux
+          - os: macos-latest
+            artifact_name: precop-node-macos
+            asset_name: precop-node-macos
+          - os: windows-latest
+            artifact_name: precop-node-win.exe
+            asset_name: precop-node-win.exe
+
+    steps:
+      - name: 📥 Checkout Sovereign Source
+        uses: actions/checkout@v4
+
+      - name: 🦀 Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 🔨 Compile (Cross-Arch)
+        run: |
+          # Note: We build the florestad component if needed, 
+          # but here we prioritize the sentinel release
+          cargo build --release
+        working-directory: ./  # Assuming cargo is in the root or a subproject
+
+      - name: 🏷️ Upload Artifact to Forge
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          asset_content_type: application/octet-stream

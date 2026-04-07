@@ -1,0 +1,13 @@
+[network]
+user_agent = "/Precop_Warrior:1.0.0/"
+p2p_port = 8334
+
+[rpc]
+rpc_address = "127.0.0.1:8335"
+username = "floresta"
+password = "tonmotdepasseultrasecure123!"
+
+[electrum]
+electrum_address = "127.0.0.1:50002"
+
+[wallet]

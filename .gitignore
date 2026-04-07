@@ -1,0 +1,10 @@
+# 🛡️ BITCOIN ROLLUP: SECURE EXCLUSIONS (v7600)
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+
+# ⛓️ BLOCKCHAIN DATA (Must NOT be committed)
+data/
+data-warrior/

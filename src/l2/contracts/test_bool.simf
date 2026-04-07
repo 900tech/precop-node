@@ -1,0 +1,4 @@
+fn main() {
+    let a: bool = jet::eq_8(0, 0);
+    jet::verify(a);
+}
