@@ -7,7 +7,7 @@ OS_TYPE=$(uname -s)
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN_DIR="$PROJECT_ROOT/bin"
 REPO_URL="https://github.com/BitcoinWorldTrustFoundation/precop-node"
-RELEASE_TAG="v1.0.2"
+RELEASE_TAG="v1.0.3"
 
 mkdir -p "$BIN_DIR"
 

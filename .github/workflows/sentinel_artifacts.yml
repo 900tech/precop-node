@@ -12,7 +12,6 @@ permissions:
 jobs:
   forge_artifacts:
     name: 🔨 Build Universal Bastion (${{ matrix.os }} / ${{ matrix.target }})
-    # 🏹 On pivote vers 22.04 (Jammy) pour la rapidité et la compatibilité GLIBC 2.35
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -106,12 +105,16 @@ jobs:
           path: bin/
           merge-multiple: true
 
-      - name: 🚀 Launch v1.0.1 Sentinel Release
+      - name: 🚀 Launch v1.0.3 Sentinel Release
         uses: softprops/action-gh-release@v2
         with:
-          files: bin/*
+          # 🏹 FILTRAGE CRITIQUE : Uniquement les binaires, pas de dossiers ou fichiers cachés.
+          files: |
+            bin/precop-node-linux
+            bin/precop-node-macos
+            bin/precop-node-win.exe
           tag_name: ${{ github.ref_name }}
-          name: 🛡️ PRECOP Sentinel v1.0.1 - Sovereign Release Candidate
+          name: 🛡️ PRECOP Sentinel v1.0.3 - Sovereign Production Release
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
