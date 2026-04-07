@@ -31,6 +31,7 @@ use bitcoin::BlockHash;
 use floresta_common::prelude::*;
 use rustreexo::node_hash::BitcoinNodeHash;
 use rustreexo::stump::Stump;
+use tracing::error;
 use tracing::info;
 
 use super::chainparams::ChainParams;

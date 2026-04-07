@@ -14,7 +14,7 @@ jobs:
     name: 🔨 Build Universal Bastion (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # 🛡️ NE PAS ANNULER LES AUTRES SI UN ÉCHOUE
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -33,52 +33,68 @@ jobs:
     steps:
       - name: 🛰️ Clone Gateway
         uses: actions/checkout@v4
-
-      - name: 🛠️ Install Toolchain (Rust)
-        uses: dtolnay/rust-toolchain@stable
         with:
+          fetch-depth: 0
+
+      - name: 🛠️ Install Toolchain (STRICT 1.81.0)
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.81.0
           targets: ${{ matrix.target }}
 
-      - name: 🛡️ Install Dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: 🛡️ Install Dependencies (Linux MUSL)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake clang llvm libssl-dev musl-tools
+          sudo apt-get install -y cmake clang llvm libssl-dev build-essential perl musl-tools
 
       - name: 🛡️ Install Dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          choco install nasm cmake
+          choco install nasm cmake strawberryperl
           echo "C:\Program Files\NASM" >> $GITHUB_PATH
 
-      - name: 🔨 Forge Sovereign Engine
+      - name: 🔍 Pre-Forge Audit (Universal Shell)
+        shell: bash
         working-directory: ./engine
         run: |
-          cargo build --release --target ${{ matrix.target }}
-          
-      - name: 📦 Prepare Binary (Linux/Mac)
-        if: matrix.os != 'windows-latest'
-        run: |
-          mkdir -p ../bin/
-          cp engine/target/${{ matrix.target }}/release/florestad bin/${{ matrix.asset_name }}
+          echo "🔍 Checking Root..."
+          ls -la
+          echo "🔍 Checking Doc/RPC..."
+          ls -la doc/rpc/ || echo "🚨 doc/rpc MISSING"
 
-      - name: 📦 Prepare Binary (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: 🔨 Forge Sovereign Engine (STATIC MUSL)
+        shell: bash
+        working-directory: ./engine
+        env:
+          CC: clang
+          CXX: clang++
+          RUST_BACKTRACE: 1
         run: |
-          mkdir -p ../bin/
-          copy engine\target\${{ matrix.target }}\release\florestad.exe bin\${{ matrix.asset_name }}
-        shell: cmd
+          # 🛡️ FORGE STATIQUE ET UNIVERSELLE
+          cargo build --verbose --release --target ${{ matrix.target }} -p florestad -j 2
+          
+      - name: 📦 Prepare Binary (Universal Pack)
+        shell: bash
+        run: |
+          # On standardise l'extension pour faciliter la détection
+          EXT=""
+          [[ "${{ matrix.os }}" == "windows-latest" ]] && EXT=".exe"
+          
+          mkdir -p bin/
+          cp engine/target/${{ matrix.target }}/release/florestad${EXT} bin/${{ matrix.asset_name }}
 
       - name: 📦 Seal Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: bin/${{ matrix.asset_name }}
+          if-no-files-found: error
 
   release:
     name: 👸 Final Scellement - Sovereign Release
     needs: forge_artifacts
-    if: always() # 🛡️ TENTER DE RÉALISER LA RELEASE MÊME SI UN BINAIRE MANQUE
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: 🛰️ Clone Gateway
@@ -87,18 +103,16 @@ jobs:
       - name: 📥 Collect Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: bin/
+          merge-multiple: true
 
-      - name: 🚀 Launch v1.0.0 Sentinel Release
+      - name: 🚀 Launch v1.0.1 Sentinel Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            artifacts/precop-node-linux/precop-node-linux
-            artifacts/precop-node-macos/precop-node-macos
-            artifacts/precop-node-win.exe/precop-node-win.exe
+          files: bin/*
           tag_name: ${{ github.ref_name }}
-          name: 🛡️ PRECOP Sentinel v1.0.0 - Sovereign Release Candidate
+          name: 🛡️ PRECOP Sentinel v1.0.1 - Sovereign Release Candidate
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true # 🛡️ NE PAS BLOQUER SI UN FICHIER MANQUE
+        continue-on-error: true

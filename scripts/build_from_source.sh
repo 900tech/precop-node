@@ -2,9 +2,10 @@
 # 🛠️ BUILD FROM SOURCE - LOCAL FORGE (v6940)
 # This script is the ultimate fallback for local sovereignty.
 
-# Determining root relative to the script location
+# 🏗️ FORGING PATHS
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SOURCE_DIR="$PROJECT_ROOT/../precopscan/tmp_floresta-v0.9.0"
+SOURCE_DIR="$PROJECT_ROOT/engine"
+BIN_DIR="$PROJECT_ROOT/bin"
 
 echo "🏗️  CHECKING FORGE TOOLS (RUST)..."
 if ! command -v cargo &> /dev/null; then

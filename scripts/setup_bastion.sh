@@ -48,10 +48,24 @@ else
 fi
 
 # 🚀 5. PERMISSIONS
-if [ -f "$PROJECT_ROOT/bin/precop-node" ]; then
-    chmod +x "$PROJECT_ROOT/bin/precop-node"
-    echo "✅ BINARY READY IN ./bin/"
+# 🛡️ BINARY ALIGNMENT
+if [ -f "$BIN_DIR/precopscan-node" ]; then
+    echo "🔄 Standardizing binary name..."
+    mv "$BIN_DIR/precopscan-node" "$BIN_DIR/precop-node"
 fi
+
+if [ -f "$BIN_DIR/precop-node" ]; then
+    chmod +x "$BIN_DIR/precop-node"
+    # Vérification rapide de l'architecture
+    if [[ "$OS_TYPE" == "Linux" ]] && file "$BIN_DIR/precop-node" | grep -q "Mach-O"; then
+        echo "🚨 ERROR: Incompatible Mac binary found on Linux. Please download the Linux version to bin/precop-node."
+        exit 1
+    fi
+    echo "✅ BINARY READY IN ./bin/"
+else
+    echo "⚠️  Sentinel binary not found in ./bin/. Please download it manually."
+fi
+
 chmod +x "$PROJECT_ROOT/scripts/"*.sh
 
 echo "✨ SETUP COMPLETE. YOU ARE READY TO IGNITE."
