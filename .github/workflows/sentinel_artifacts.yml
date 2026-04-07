@@ -12,13 +12,13 @@ permissions:
 jobs:
   forge_artifacts:
     name: 🔨 Build Universal Bastion (${{ matrix.os }} / ${{ matrix.target }})
-    # 🏹 On force Ubuntu 20.04 pour la compatibilité GLIBC (2.31)
+    # 🏹 On pivote vers 22.04 (Jammy) pour la rapidité et la compatibilité GLIBC 2.35
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             artifact_name: precop-node-linux
             asset_name: precop-node-linux
@@ -43,8 +43,8 @@ jobs:
           toolchain: 1.81.0
           targets: ${{ matrix.target }}
 
-      - name: 🛡️ Install Dependencies (Linux Focal)
-        if: matrix.os == 'ubuntu-20.04'
+      - name: 🛡️ Install Dependencies (Linux Jammy)
+        if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake clang llvm libssl-dev build-essential perl
@@ -64,7 +64,7 @@ jobs:
           echo "🔍 Checking Doc/RPC..."
           ls -la doc/rpc/ || echo "🚨 doc/rpc MISSING"
 
-      - name: 🔨 Forge Sovereign Engine (FOCAL COMPAT)
+      - name: 🔨 Forge Sovereign Engine (JAMMY COMPAT)
         shell: bash
         working-directory: ./engine
         env:
@@ -72,7 +72,7 @@ jobs:
           CXX: clang++
           RUST_BACKTRACE: 1
         run: |
-          # 🛡️ FORGE COMPATIBLE GLIBC 2.31 (FOCAL)
+          # 🛡️ FORGE COMPATIBLE GLIBC 2.35 (JAMMY)
           cargo build --verbose --release --target ${{ matrix.target }} -p florestad -j 2
           
       - name: 📦 Prepare Binary (Universal Pack)
