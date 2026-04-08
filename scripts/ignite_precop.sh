@@ -30,7 +30,7 @@ echo "📡 DATA DIR: $DATA_DIR"
 chmod +x "$BINARY"
 echo "🚀 Ignition globalisée via floresta.toml..."
 # On force les adresses [::] via CLI pour garantir le mode Sentinel public (Dual-Stack).
-# Note: On utilise des guillemets pour éviter que le shell n'interprète les crochets.
+# La redirection de port 8333 est activée - Note: Ce binaire utilise le mode Client-Only pour le P2P.
 nohup "$BINARY" -c "$CONFIG" --data-dir "$DATA_DIR" --rpc-address "[::]:8332" --electrum-address "[::]:50001" -d > "$PROJECT_ROOT/node.log" 2>&1 &
 
 echo "⏳ Awakening the Sentinel deep-state (30s cooldown)..."
@@ -46,6 +46,11 @@ if pgrep -f "precop-node" > /dev/null; then
     
     echo "📡 Connecting to Sovereign Seed (Persistent Mode): $SOVEREIGN_SEED..."
     curl --silent --user "$RPC_USER:$RPC_PASS" -d "{\"jsonrpc\":\"1.0\",\"id\":\"swarm\",\"method\":\"addnode\",\"params\":[\"$SOVEREIGN_SEED\", \"add\"]}" http://127.0.0.1:8332 > /dev/null
+    
+    # 📡 OTT SWARM BEACON IGNITION
+    echo "📻 Awakening the Radar Beacon (OTT Swarm)..."
+    INDEXER_DIR="$(cd "$PROJECT_ROOT/../precop-indexer" && pwd)"
+    nohup npx ts-node "$INDEXER_DIR/src/sentinel-beacon.ts" > "$PROJECT_ROOT/beacon.log" 2>&1 &
     
     echo "✨ Logs available at $PROJECT_ROOT/node.log"
 else
