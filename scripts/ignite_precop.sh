@@ -30,13 +30,20 @@ echo "📡 DATA DIR: $DATA_DIR"
 # Note: In Standalone mode, we use the local .env as a single source of truth.
 if [ ! -f "$PROJECT_ROOT/.env" ]; then
     echo "📝 Generating fresh Sovereign .env..."
+    
+    echo "🏷️  NAMING YOUR SOVEREIGN SENTINEL..."
+    read -p "Enter a unique name for this node (ex: ALPHA): " NODE_NAME
+    NODE_NAME=${NODE_NAME:-"STATION-01"}
+    NODE_ID="PRECOP-${NODE_NAME}-MAINNET"
+    NODE_ALIAS="$NODE_ID"
+
     cat <<EOF > "$PROJECT_ROOT/.env"
 RPC_URL="http://127.0.0.1:8332"
 RPC_USER="floresta"
 RPC_PASSWORD="8e5cde5295800d10b02b297085832da9"
 DASHBOARD_URL="https://interproportional-tameika-isorhythmically.ngrok-free.dev"
-NODE_ALIAS="SOVEREIGN-SENTINEL"
-NODE_ID="sentinel-$(date +%s)"
+NODE_ALIAS="$NODE_ALIAS"
+NODE_ID="$NODE_ID"
 EOF
 else
     # 🕵️ Incremental hardening: ensure Swarm variables are present and up-to-date
@@ -46,8 +53,15 @@ else
     fi
     
     grep -q "DASHBOARD_URL" "$PROJECT_ROOT/.env" || echo "DASHBOARD_URL=\"https://interproportional-tameika-isorhythmically.ngrok-free.dev\"" >> "$PROJECT_ROOT/.env"
-    grep -q "NODE_ALIAS" "$PROJECT_ROOT/.env" || echo "NODE_ALIAS=\"SOVEREIGN-SENTINEL\"" >> "$PROJECT_ROOT/.env"
-    grep -q "NODE_ID" "$PROJECT_ROOT/.env" || echo "NODE_ID=\"sentinel-$(date +%s)\"" >> "$PROJECT_ROOT/.env"
+    
+    if ! grep -q "NODE_ID" "$PROJECT_ROOT/.env"; then
+        echo "🏷️  NAMING YOUR SOVEREIGN SENTINEL (Migration)..."
+        read -p "Enter a unique name for this node (ex: ALPHA): " NODE_NAME
+        NODE_NAME=${NODE_NAME:-"STATION-01"}
+        NODE_ID="PRECOP-${NODE_NAME}-MAINNET"
+        echo "NODE_ALIAS=\"$NODE_ID\"" >> "$PROJECT_ROOT/.env"
+        echo "NODE_ID=\"$NODE_ID\"" >> "$PROJECT_ROOT/.env"
+    fi
 fi
 
 # Load local environment

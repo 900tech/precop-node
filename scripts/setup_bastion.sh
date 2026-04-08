@@ -44,12 +44,19 @@ RPC_USER=floresta
 RPC_PASS=$RPC_PASSWORD
 RPC_HOST=127.0.0.1
 RPC_PORT=8332
+    echo "🏷️  NAMING YOUR SOVEREIGN SENTINEL..."
+    read -p "Enter a unique name for this node (ex: ALPHA): " NODE_NAME
+    NODE_NAME=${NODE_NAME:-"STATION-01"}
+    NODE_ID="PRECOP-${NODE_NAME}-MAINNET"
+    NODE_ALIAS="$NODE_ID"
+    
+    cat <<EOF >> .env
 DATABASE_URL="postgresql://$(whoami)@localhost/precopscan_vault?host=/tmp"
 DASHBOARD_URL="https://interproportional-tameika-isorhythmically.ngrok-free.dev"
-NODE_ALIAS="SOVEREIGN-SENTINEL"
-NODE_ID="sentinel-$(date +%s)"
+NODE_ALIAS="$NODE_ALIAS"
+NODE_ID="$NODE_ID"
 EOF
-    echo "✅ Sovereign .env generated."
+    echo "✅ Sovereign .env generated with ID: $NODE_ID"
 fi
 
 # 🌍 4. SWARM BEACON DETECTION (v38)
