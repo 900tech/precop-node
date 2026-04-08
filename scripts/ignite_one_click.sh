@@ -92,11 +92,19 @@ fi
 
 if command -v psql &> /dev/null; then
     echo "✅ PostgreSQL detected. Verifying Vault..."
-    # 🕵️ Check if the database exists, create if not
-    DB_EXISTS=$(psql -lqt | cut -d \| -f 1 | grep -qw precopscan_vault && echo "yes" || echo "no")
+    # 🕵️ Check if the database exists, create if not using superuser if needed
+    DB_NAME="precopscan_vault"
+    CURRENT_USER=$(whoami)
+    
+    DB_EXISTS=$(psql -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME" && echo "yes" || echo "no")
+    
     if [ "$DB_EXISTS" == "no" ]; then
-        echo "🏺 Creating the Sovereign Vault: precopscan_vault..."
-        createdb precopscan_vault || sudo -u postgres createdb precopscan_vault || echo "🚨 Failed to create DB. Please create 'precopscan_vault' manually."
+        echo "🏺 Forging the Sovereign Vault: $DB_NAME for user $CURRENT_USER..."
+        # Try direct, then try via postgres user with explicit owner
+        createdb "$DB_NAME" || \
+        sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $CURRENT_USER;" || \
+        sudo -u postgres createdb "$DB_NAME" -O "$CURRENT_USER" || \
+        echo "🚨 Critical: Failed to forge DB. Please run: sudo -u postgres createdb $DB_NAME -O $CURRENT_USER"
     else
         echo "✅ Sovereign Vault detected."
     fi
