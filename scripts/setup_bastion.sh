@@ -69,12 +69,8 @@ if [ -x "$(command -v nc)" ]; then
 fi
 
 # 🌉 4. COCKPIT SYNCHRONIZATION
-if [ -d "$DASHBOARD_DIR" ]; then
-    cp "$PROJECT_ROOT/.env" "$DASHBOARD_DIR/.env"
-    echo "✅ Dashboard synchronized with Sovereign Secrets."
-else
-    echo "⚠️  Dashboard folder not found at $DASHBOARD_DIR. Remember to copy .env manually."
-fi
+# Note: In Standalone mode, the node reports to the dashboard via HTTPS heartbeats.
+# Local .env synchronization is no longer required for swarm visibility.
 
 # 🚀 5. PERMISSIONS
 # 🛡️ BINARY ALIGNMENT

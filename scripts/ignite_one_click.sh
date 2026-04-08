@@ -60,8 +60,20 @@ else
     # PRECOP-NODE (Self)
     echo "📦 Preparing Sentinel Logic..."
     npm install --silent
-    npx prisma generate --silent
+    npx prisma generate 
     echo "✅ Sentinel Alchemy Complete."
+fi
+
+# --- 🛰️ DYNAMIC RADAR TARGETING ---
+# If a DASHBOARD_URL is passed as the first argument, we inject it.
+if [ -n "$1" ]; then
+    echo "🎯 TARGETING RADAR: $1"
+    if [ -f "$PROJECT_ROOT/.env" ]; then
+        # Replace or append
+        sed -i "s|DASHBOARD_URL=.*|DASHBOARD_URL=\"$1\"|g" "$PROJECT_ROOT/.env"
+    else
+        echo "DASHBOARD_URL=\"$1\"" > "$PROJECT_ROOT/.env"
+    fi
 fi
 
 # --- 🔵 DATABASE CHECK & FORGE ---
