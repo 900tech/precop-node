@@ -52,15 +52,21 @@ else
         sed -i "s|DASHBOARD_URL=\"http://localhost:3001\"|DASHBOARD_URL=\"https://interproportional-tameika-isorhythmically.ngrok-free.dev\"|g" "$PROJECT_ROOT/.env"
     fi
     
-    grep -q "DASHBOARD_URL" "$PROJECT_ROOT/.env" || echo "DASHBOARD_URL=\"https://interproportional-tameika-isorhythmically.ngrok-free.dev\"" >> "$PROJECT_ROOT/.env"
-    
-    if ! grep -q "NODE_ID" "$PROJECT_ROOT/.env"; then
-        echo "🏷️  NAMING YOUR SOVEREIGN SENTINEL (Migration)..."
+    if ! grep -q "NODE_ID" "$PROJECT_ROOT/.env" || grep -q "NODE_ID=\"sentinel-" "$PROJECT_ROOT/.env"; then
+        echo "🏷️  NAMING YOUR SOVEREIGN SENTINEL (Migration required)..."
+        # On sauvegarde les autres variables si elles existent
+        EXISTING_VARS=$(grep -E "RPC_URL|RPC_USER|RPC_PASSWORD|DATABASE_URL|DASHBOARD_URL" "$PROJECT_ROOT/.env" || true)
+        
         read -p "Enter a unique name for this node (ex: ALPHA): " NODE_NAME
         NODE_NAME=${NODE_NAME:-"STATION-01"}
         NODE_ID="PRECOP-${NODE_NAME}-MAINNET"
-        echo "NODE_ALIAS=\"$NODE_ID\"" >> "$PROJECT_ROOT/.env"
+        NODE_ALIAS="$NODE_ID"
+
+        # On reconstruit le .env proprement
+        echo "$EXISTING_VARS" > "$PROJECT_ROOT/.env"
+        echo "NODE_ALIAS=\"$NODE_ALIAS\"" >> "$PROJECT_ROOT/.env"
         echo "NODE_ID=\"$NODE_ID\"" >> "$PROJECT_ROOT/.env"
+        echo "✅ Identity Migrated to: $NODE_ID"
     fi
 fi
 
