@@ -3,23 +3,25 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import { callRPC } from "../rpc/floresta-rpc";
 
-// 🏗️ STANDALONE ENV LOADING (V38.4)
+// 🏗️ HARDBOUND ENV LOADING (FORCE PRIORITY)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, "../../.env") });
+const PROJECT_ROOT = path.resolve(__dirname, "../../");
+dotenv.config({ path: path.join(PROJECT_ROOT, ".env"), override: true });
 
 /**
- * 🛰️ STANDALONE SENTINEL BEACON (V38-STANDALONE)
- * Decoupled Radar Signal. Transmits node status independently.
+ * 🛰️ STANDALONE SENTINEL BEACON (V38.22-ELITE)
+ * Decoupled Radar Signal. Transmits node status with zero-failure identity extraction.
  */
-// Sanitization: Remove potential quotes from env variables (common in shell exports)
-const DASHBOARD_URL = (process.env.DASHBOARD_URL || "http://localhost:3001").replace(/['"]+/g, '');
-const NODE_ALIAS    = (process.env.NODE_ALIAS    || "SOVEREIGN-SENTINEL").replace(/['"]+/g, '');
+// Sanitization: Remove potential quotes from env variables
+const DASHBOARD_URL = (process.env.DASHBOARD_URL || "https://interproportional-tameika-isorhythmically.ngrok-free.dev").replace(/['"]+/g, '');
+const NODE_ALIAS    = (process.env.NODE_ALIAS    || "RADAR-GHOST").replace(/['"]+/g, '');
 const NODE_ID       = (process.env.NODE_ID       || "unknown-sentinel").replace(/['"]+/g, '');
 
 async function startBeacon() {
-    console.log(`📡 Démarrage du Beacon Standalone pour [${NODE_ALIAS}]...`);
+    console.log(`📡 Démarrage du Beacon ELITE pour [${NODE_ALIAS}]...`);
     console.log(`🔗 Radar Target: ${DASHBOARD_URL}`);
+    console.log(`🆔 Identity: ${NODE_ID}`);
 
     setInterval(async () => {
         try {
