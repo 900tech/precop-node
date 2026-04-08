@@ -48,8 +48,27 @@ else
     echo "✅ Binary already present in $LOCAL_BINARY."
 fi
 
-# 🏗️ 3. FORGE THE FULL-STACK (L2 & Dashboard)
+# 🏗️ 3. FORGE THE FULL-STACK (L2 & Dashboard Discovery)
 echo "🏗️  FORGING FULL-STACK REAPER ENGINE..."
+
+# --- 🛰️ SWARM AUTO-DISCOVERY ---
+BASE_DIR="$(cd "$PROJECT_ROOT/.." && pwd)"
+
+# 1. PRECOP-INDEXER
+if [ ! -d "$BASE_DIR/precop-indexer" ]; then
+    echo "🛰️  Indexer missing. Cloning from the Swarm..."
+    git -C "$BASE_DIR" clone https://github.com/BitcoinWorldTrustFoundation/precop-indexer.git
+else
+    echo "✅ Indexer detected."
+fi
+
+# 2. PRECOP-DASHBOARD (Optional on VPS, but required for consistent structure)
+if [ ! -d "$BASE_DIR/precop-dashboard" ]; then
+    echo "🛰️  Dashboard missing. Cloning from the Swarm..."
+    git -C "$BASE_DIR" clone https://github.com/BitcoinWorldTrustFoundation/precop-dashboard.git
+else
+    echo "✅ Dashboard detected."
+fi
 
 # --- 🟢 NODE.JS & NPM CHECK ---
 if ! command -v npm &> /dev/null; then
