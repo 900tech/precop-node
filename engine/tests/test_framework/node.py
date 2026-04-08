@@ -313,20 +313,14 @@ class Node:
                 f"{node.variant} is running: {node.daemon.is_running}"
             )
 
-        if node.variant == NodeType.FLORESTAD:
-            raise ValueError("The p2p port is not configurable in floresta")
-
+        # Use the explicit p2p_url from the node's daemon config
         self.rpc.addnode(node.p2p_url, method, v2transport=v2transport)
 
     def get_connection_info(self) -> Tuple[str, Optional[str]]:
         """
         Get the user agent and host for the current node.
         """
-        address = (
-            self.p2p_url
-            if self.variant != NodeType.FLORESTAD
-            else None  # The p2p port is not configurable in floresta
-        )
+        address = self.p2p_url
         variants = {
             NodeType.FLORESTAD: ("Floresta", address),
             NodeType.UTREEXOD: ("utreexod", address),
