@@ -44,8 +44,8 @@ if pgrep -f "precop-node" > /dev/null; then
     RPC_USER="floresta"
     RPC_PASS=$(grep "password" "$CONFIG" | cut -d '"' -f 2)
     
-    echo "📡 Connecting to Sovereign Seed: $SOVEREIGN_SEED..."
-    curl --silent --user "$RPC_USER:$RPC_PASS" -d "{\"jsonrpc\":\"1.0\",\"id\":\"swarm\",\"method\":\"addnode\",\"params\":[\"$SOVEREIGN_SEED\", \"onetry\"]}" http://127.0.0.1:8332 > /dev/null
+    echo "📡 Connecting to Sovereign Seed (Persistent Mode): $SOVEREIGN_SEED..."
+    curl --silent --user "$RPC_USER:$RPC_PASS" -d "{\"jsonrpc\":\"1.0\",\"id\":\"swarm\",\"method\":\"addnode\",\"params\":[\"$SOVEREIGN_SEED\", \"add\"]}" http://127.0.0.1:8332 > /dev/null
     
     echo "✨ Logs available at $PROJECT_ROOT/node.log"
 else
