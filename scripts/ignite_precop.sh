@@ -37,6 +37,16 @@ echo "⏳ Awakening the Sentinel deep-state (30s cooldown)..."
 sleep 5
 if pgrep -f "precop-node" > /dev/null; then
     echo "✅ Sentinel is breathing. Initializing the Swarm handshake..."
+    
+    # 🛰️ SOVEREIGN SEED HANDSHAKE (V38-BEACON)
+    # On connecte automatiquement le nœud local à la balise VPS (Sovereign Seed)
+    SOVEREIGN_SEED="[2a0a:4cc0:0:21b1:400:e0ff:fe79:9797]:8333"
+    RPC_USER="floresta"
+    RPC_PASS=$(grep "password" "$CONFIG" | cut -d '"' -f 2)
+    
+    echo "📡 Connecting to Sovereign Seed: $SOVEREIGN_SEED..."
+    curl --silent --user "$RPC_USER:$RPC_PASS" -d "{\"jsonrpc\":\"1.0\",\"id\":\"swarm\",\"method\":\"addnode\",\"params\":[\"$SOVEREIGN_SEED\", \"onetry\"]}" http://127.0.0.1:8332 > /dev/null
+    
     echo "✨ Logs available at $PROJECT_ROOT/node.log"
 else
     echo "🚨 ERROR: Sentinel failed to ignite. Check $PROJECT_ROOT/node.log for details."

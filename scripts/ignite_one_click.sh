@@ -72,11 +72,34 @@ else
     fi
 fi
 
-# --- 🔵 DATABASE CHECK ---
+# --- 🔵 DATABASE CHECK & FORGE ---
 if ! command -v psql &> /dev/null; then
-    echo "⚠️  WARNING: PostgreSQL 'psql' not found. Ensure Postgres is installed for the Indexer."
-else
-    echo "✅ PostgreSQL tools detected."
+    echo "🏗️  PostgreSQL not found. Attempting Sovereign Installation..."
+    case "$OS_TYPE" in
+        Linux)
+            sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+            sudo service postgresql start
+            ;;
+        Darwin)
+            brew install postgresql@14
+            brew services start postgresql@14
+            ;;
+        *)
+            echo "⚠️  Please install PostgreSQL manually for your OS."
+            ;;
+    esac
+fi
+
+if command -v psql &> /dev/null; then
+    echo "✅ PostgreSQL detected. Verifying Vault..."
+    # 🕵️ Check if the database exists, create if not
+    DB_EXISTS=$(psql -lqt | cut -d \| -f 1 | grep -qw precopscan_vault && echo "yes" || echo "no")
+    if [ "$DB_EXISTS" == "no" ]; then
+        echo "🏺 Creating the Sovereign Vault: precopscan_vault..."
+        createdb precopscan_vault || sudo -u postgres createdb precopscan_vault || echo "🚨 Failed to create DB. Please create 'precopscan_vault' manually."
+    else
+        echo "✅ Sovereign Vault detected."
+    fi
 fi
 
 # 🏗️ 4. BASTION SETUP (Sentinel Logic)
@@ -87,5 +110,16 @@ bash "$PROJECT_ROOT/scripts/setup_bastion.sh"
 echo "🚀 Igniting Precop Sentinel..."
 bash "$PROJECT_ROOT/scripts/ignite_precop.sh"
 
-echo "✨ FULL-STACK SUCCESSFUL. MISSION ACCOMPLISHED."
+# 🛰️ 6. TELEMETRY HEALTH CHECK
+echo "🔍 Performing Telemetry Handshake..."
+RPC_PASS=$(grep "password" "$PROJECT_ROOT/node-config/floresta.toml" | cut -d '"' -f 2)
+HEALTH_CHECK=$(curl --silent --user "floresta:$RPC_PASS" -d '{"jsonrpc":"1.0","id":"probe","method":"getblockchaininfo","params":[]}' http://127.0.0.1:8332 | grep "blocks")
+
+if [ -n "$HEALTH_CHECK" ]; then
+    echo "✅ API CORE RESPONDING (JSON-RPC :8332)."
+    echo "✨ FULL-STACK SUCCESSFUL. MISSION ACCOMPLISHED."
+else
+    echo "⚠️  WARNING: Sentinel ignited but API is slow to respond. Check node.log."
+fi
+
 echo "📜 Watch logs with: tail -f node.log"

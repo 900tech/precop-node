@@ -42,7 +42,10 @@ if [ ! -f "$PROJECT_ROOT/.env" ]; then
     echo "RPC_PASS=$RPC_PASSWORD" >> "$PROJECT_ROOT/.env"
     echo "RPC_HOST=127.0.0.1" >> "$PROJECT_ROOT/.env"
     echo "RPC_PORT=8332" >> "$PROJECT_ROOT/.env"
-    echo "✅ Local .env generated for the Bastion."
+    # On utilise l'utilisateur courant pour éviter de casser le script chez les Brothers
+    CURRENT_USER=$(whoami)
+    echo "DATABASE_URL=\"postgresql://$CURRENT_USER@localhost/precopscan_vault?host=/tmp\"" >> "$PROJECT_ROOT/.env"
+    echo "✅ Local .env generated for the Bastion (including DB_URL for $CURRENT_USER)."
 fi
 
 # 🌍 4. SWARM BEACON DETECTION (v38)
