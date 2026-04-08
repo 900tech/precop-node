@@ -6,18 +6,19 @@
 user_agent = "/Precop:1.0.0/"
 
 [p2p]
-address = "127.0.0.1"
+address = "::"
 port = 8333
+max_peers = 50
 
 [rpc]
-address = "127.0.0.1"
+address = "::"
 port = 8332
 user = "floresta"
 password = "{{RPC_PASSWORD}}" # 🔐 Automatically replaced by setup_bastion.sh
 
 [electrum]
 enabled = true
-address = "127.0.0.1"
+address = "::"
 port = 50001
 
 [wallet]
