@@ -61,39 +61,48 @@ The system operates as a hybrid Rust/TypeScript stack, optimized for P2P resilie
 
 ---
 
-### III. SOVEREIGN CONFIGURATION (RC-GRADE)
+### III. SOVEREIGN CONFIGURATION (V36 REAPER GRADING)
 
-## 🚀 Rapid Deployment (Portable Mode)
+## 👸 Sovereign One-Click Ignition (Recommended)
 
-This Bastion is engineered for **Absolute Portability**. It functions as a self-contained unit, independent of system-wide pathing.
+This Bastion is engineered for **Absolute Autonomy**. It functions as a self-contained unit, detecting your architecture, downloading the necessary blade (binary), and securing the network with dynamic secrets.
 
-### 📥 Installation
-- **Standard (Mac ARM64)**: Already included in `./bin/`.
-- **Universal (Linux/Windows)**: Download pre-compiled, static binaries from the [GitHub Releases](your-link-here).
-- **Custom/Other**: If you are on an unsupported platform, run `./scripts/build_from_source.sh` to compile locally from the Rust source.
-
-> ### ⚠️ ARCHITECTURE WARNING
-> This repository includes a pre-compiled binary for **macOS (Apple Silicon / ARM64)**. 
-> - **Linux / x86_64 users**: You must compile `precop-node` from source or use the Universal Binary.
-
+### 📥 One-Click Installation
 1.  **Clone the Bastion**:
     ```bash
-    git clone https://github.com/votre-repo/precop-node.git
+    git clone https://github.com/BitcoinWorldTrustFoundation/precop-node.git
     cd precop-node
     ```
 
-2.  **Initialize & Secure**:
+2.  **Ignite Everything**:
     ```bash
     chmod +x scripts/*.sh
-    ./scripts/setup_bastion.sh
+    ./scripts/ignite_one_click.sh
     ```
-    *Note: This generates a unique 32-char hex RPC secret and synchronizes your Dashboard via `.env`.*
 
-3.  **Ignite the Sentinel**:
-    ```bash
-    ./scripts/ignite_precop.sh
-    ```
-    *Trace its breath via `tail -f node.log`.*
+*This single command will:*
+*   **Identify HW** (Intel vs Apple Silicon vs Linux).
+*   **Download Blade** (Pulls the latest compatible binaire from GitHub).
+*   **Forge Bastion** (Generates 32-hex RPC secrets and Dual-Stack IPv6 config).
+*   **Force Connectivity** (Binds to `[::]:8332` for global peer discovery).
+*   **Launch Radar** (Ready to be detected by the "Crimson Eye" Dashboard).
+
+---
+
+## 🔱 The Reaper Engine (Deep Witness Indexing)
+
+Precop-Node (v1.0.3+) includes the **Reaper V36** logic, specifically designed to bypass the limitations of standard indexers.
+- **Deep Witness Scanning**: Correctly parses Ordinals envelopes (`6f7264`) spread across multiple witness stack items.
+- **BRC-20/Runes Extraction**: Automated harvesting of legacy OP_RETURN and modern Runestone injections.
+- **High-Velocity Parallelism**: Leverages multi-threaded workers to reach **3000+ blocks per minute** during historical indexing.
+
+---
+
+### IV. NETWORK ARCHITECTURE: THE SWARM
+
+To become a **Frontline Sentinel**, ensure your firewall allows **Port 8333 (P2P)**.
+- **Dual-Stack Default**: New nodes bind to `[::]` to handle both IPv4 and IPv6 traffic.
+- **Peer Route Discovery**: Nodes with the `/Precop:1.0.0/` signature are automatically prioritized by the Dashboard's **Crimson Eye** for the sovereign handshake.
 
 ---
 

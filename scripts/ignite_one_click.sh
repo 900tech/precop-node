@@ -2,29 +2,19 @@
 # 👸 SOVEREIGN ONE-CLICK IGNITION v1.1.0
 # The ultimate entry point for the Precop Sentinel.
 
-# 🏹 1. IDENTIFY THE WORLD
-OS_TYPE=$(uname -s)
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BIN_DIR="$PROJECT_ROOT/bin"
-REPO_URL="https://github.com/BitcoinWorldTrustFoundation/precop-node"
-RELEASE_TAG="v1.0.3"
-
-mkdir -p "$BIN_DIR"
-
-echo "🏹 AWAKENING SOVEREIGN SENTINEL (ONE-CLICK MODE)..."
-
 # 🛰️ 2. FETCH THE BLADE (Download binary)
+HW_TYPE=$(uname -m)
 case "$OS_TYPE" in
     Linux)
-        echo "🐧 Linux detected. Fetching Universal MUSL Sentinel..."
+        echo "🐧 Linux detected ($HW_TYPE). Fetching Universal Linux Sentinel..."
         BINARY_PATH="precop-node-linux"
         ;;
     Darwin)
-        echo "🍎 MacOS detected. Fetching Silicon Sentinel..."
+        echo "🍎 MacOS detected ($HW_TYPE). Fetching Apple Sentinel..."
         BINARY_PATH="precop-node-macos"
         ;;
     *)
-        echo "🚨 Unsupported OS: $OS_TYPE. Please download manually."
+        echo "🚨 Unsupported OS: $OS_TYPE."
         exit 1
         ;;
 esac

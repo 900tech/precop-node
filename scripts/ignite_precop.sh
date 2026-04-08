@@ -32,6 +32,7 @@ echo "📡 DATA DIR: $DATA_DIR"
 # 🚀 Ignition
 chmod +x "$BINARY"
 echo "🚀 Ignition globalisée via floresta.toml..."
-nohup "$BINARY" --config-file "$CONFIG" --data-dir "$DATA_DIR" -d > "$PROJECT_ROOT/node.log" 2>&1 &
+# On force les adresses [::] via CLI pour garantir le mode Sentinel public (Dual-Stack).
+nohup "$BINARY" -c "$CONFIG" --data-dir "$DATA_DIR" --rpc-address "[::]:8332" --electrum-address "[::]:50001" -d > "$PROJECT_ROOT/node.log" 2>&1 &
 
 echo "✨ Sentinel ignited in background. Logs available at $PROJECT_ROOT/node.log"
