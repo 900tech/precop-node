@@ -6,11 +6,11 @@
 user_agent = "/Precop:1.0.0/"
 
 [p2p]
-address = "0.0.0.0"
+address = "::"
 port = 8333
 
 [rpc]
-address = "0.0.0.0"
+address = "::"
 port = 8332
 user = "floresta"
 password = "8e5cde5295800d10b02b297085832da9" # 🔐 Automatically replaced by setup_bastion.sh
