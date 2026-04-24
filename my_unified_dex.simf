@@ -1,0 +1,29 @@
+; =============================================
+; Precop Unified DEX / AMM - 第一个 Precop dApp
+; 作者: 900tech (2026.4.24)
+; 目标: BTC + BRC-20 + Runes 原子互换
+; 手续费: 97% 给 LP，3% 进国库
+; =============================================
+
+(const FEE_RATE 3)           ; 3% 手续费
+(const DUST_LIMIT 546)       ; 尘埃限制
+
+; 主原子交换函数
+(define (unified_atomic_swap 
+         input_btc 
+         input_brc20 
+         input_runes 
+         lp_address)
+  (let*
+    ((total_in (add input_btc (add input_brc20 input_runes)))
+     ((fee (mul total_in FEE_RATE 100))
+      (lp_amount (sub total_in fee)))
+     (and
+       (ge_128 total_in DUST_LIMIT)
+       (output_amount 0 lp_amount)                     ; 97% → LP
+       (output_amount 1 fee)                           ; 3% → 国库
+       (btc_verify input_btc)
+       (brc20_verify input_brc20)
+       (runes_verify input_runes)
+       (eq (output_script_pubkey_hash 0) lp_address)
+       true))))
